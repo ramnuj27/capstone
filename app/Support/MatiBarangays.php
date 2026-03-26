@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Support;
+
+final class MatiBarangays
+{
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return [
+            'Badas',
+            'Bobon',
+            'Buso',
+            'Cabuaya',
+            'Central',
+            'Culian',
+            'Dahican',
+            'Danao',
+            'Dawan',
+            'Don Enrique Lopez',
+            'Don Martin Marundan',
+            'Don Salvador Lopez, Sr.',
+            'Langka',
+            'Lawigan',
+            'Libudon',
+            'Luban',
+            'Macambol',
+            'Mamali',
+            'Matiao',
+            'Mayo',
+            'Sainz',
+            'Sanghay',
+            'Tagabakid',
+            'Tagbinonga',
+            'Taguibo',
+            'Tamisan',
+        ];
+    }
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f172a">
+    <title>EvaqReady Offline</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #020617;
+            --surface: rgba(15, 23, 42, 0.86);
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --border: rgba(148, 163, 184, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: "Instrument Sans", system-ui, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.2), transparent 28%),
+                linear-gradient(180deg, #0f172a 0%, #020617 100%);
+            color: var(--text);
+        }
+
+        main {
+            width: min(100%, 32rem);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--surface);
+            padding: 28px;
+            box-shadow: 0 32px 80px -48px rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(18px);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+            line-height: 1.1;
+        }
+
+        p {
+            margin: 14px 0 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #bae6fd;
+        }
+
+        ul {
+            margin: 18px 0 0;
+            padding-left: 18px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        a {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="status">Offline Ready</div>
+        <h1>You are offline.</h1>
+        <p>
+            EvaqReady is still available for pages and assets that were already opened on this device.
+            Reconnect when possible so new scans, updates, and sync jobs can be sent to the server.
+        </p>
+        <ul>
+            <li>Previously visited pages can still load from local cache.</li>
+            <li>The installed app can continue opening even without internet.</li>
+            <li>Reconnect later to refresh live data and sync queued work.</li>
+        </ul>
+        <p>
+            When you are back online, return to <a href="/">EvaqReady</a>.
+        </p>
+    </main>
+</body>
+</html>

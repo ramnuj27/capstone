@@ -1,0 +1,56 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+    BadgeCheck,
+    BellRing,
+    ChartColumn,
+    ClipboardCheck,
+    ClipboardList,
+    FilePen,
+    FileWarning,
+    HandHeart,
+    HeartPulse,
+    House,
+    LayoutGrid,
+    List,
+    Map,
+    MapPinned,
+    Megaphone,
+    NotebookText,
+    Package,
+    Phone,
+    Radio,
+    Siren,
+    TriangleAlert,
+    Users,
+    UsersRound,
+} from 'lucide-react';
+
+const iconMap: Record<string, LucideIcon> = {
+    'badge-check': BadgeCheck,
+    'bell-ring': BellRing,
+    'chart-column': ChartColumn,
+    'clipboard-check': ClipboardCheck,
+    'clipboard-list': ClipboardList,
+    'file-pen': FilePen,
+    'file-warning': FileWarning,
+    'hand-heart': HandHeart,
+    'heart-pulse': HeartPulse,
+    house: House,
+    'layout-grid': LayoutGrid,
+    list: List,
+    map: Map,
+    'map-pinned': MapPinned,
+    megaphone: Megaphone,
+    'notebook-text': NotebookText,
+    package: Package,
+    phone: Phone,
+    radio: Radio,
+    siren: Siren,
+    'triangle-alert': TriangleAlert,
+    users: Users,
+    'users-round': UsersRound,
+};
+
+export function getPortalIcon(icon: string): LucideIcon {
+    return iconMap[icon] ?? LayoutGrid;
+}
