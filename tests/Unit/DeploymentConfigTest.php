@@ -106,6 +106,17 @@ test('bootstrap app provisions a persistent fallback app key when APP_KEY is mis
         ->toContain('putenv("APP_KEY={$appKey}");');
 });
 
+test('bootstrap app trusts forwarded proxy headers for hosted https deployments', function (): void {
+    $bootstrapApp = file_get_contents(dirname(__DIR__, 2).'/bootstrap/app.php');
+
+    expect($bootstrapApp)
+        ->not->toBeFalse()
+        ->toContain('$middleware->trustProxies(')
+        ->toContain("at: '*'")
+        ->toContain('Request::HEADER_X_FORWARDED_PROTO')
+        ->toContain('Request::HEADER_X_FORWARDED_AWS_ELB');
+});
+
 test('hosted defaults avoid forcing database-backed sessions cache and queues', function (): void {
     $sessionConfig = file_get_contents(dirname(__DIR__, 2).'/config/session.php');
     $cacheConfig = file_get_contents(dirname(__DIR__, 2).'/config/cache.php');
