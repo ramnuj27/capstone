@@ -29,3 +29,15 @@ test('database seeder creates the four demo portal accounts', function () {
     expect($barangayAdmin?->householdProfile?->barangay)->toBe('Dahican');
     expect($resident?->householdProfile?->barangay)->toBe('Central');
 });
+
+test('database seeder preserves an existing demo account password when rerun', function () {
+    $admin = User::factory()->mainAdmin()->create([
+        'email' => 'admin@evaqready.test',
+        'password' => 'custom-password',
+    ]);
+
+    $this->seed(DatabaseSeeder::class);
+
+    expect(Hash::check('custom-password', $admin->refresh()->password))->toBeTrue();
+    expect($admin->role)->toBe(UserRole::MainAdmin);
+});

@@ -8,7 +8,6 @@ use App\Models\User;
 use App\UserRole;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -80,15 +79,21 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($demoUsers as $demoUser) {
-            $user = User::query()->updateOrCreate(
-                ['email' => $demoUser['email']],
-                [
-                    'name' => $demoUser['name'],
-                    'password' => Hash::make('password'),
-                    'role' => $demoUser['role'],
-                    'email_verified_at' => now(),
-                ],
-            );
+            $user = User::query()->firstOrNew([
+                'email' => $demoUser['email'],
+            ]);
+
+            $user->fill([
+                'name' => $demoUser['name'],
+                'role' => $demoUser['role'],
+                'email_verified_at' => $user->email_verified_at ?? now(),
+            ]);
+
+            if (! $user->exists) {
+                $user->password = 'password';
+            }
+
+            $user->save();
 
             if ($demoUser['profile'] === null) {
                 continue;

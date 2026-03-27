@@ -32,7 +32,7 @@ test('railway deployment config serves Laravel and runs migrations before start'
 
     expect(data_get($railwayConfig, 'build.builder'))->toBe('RAILPACK');
     expect(data_get($railwayConfig, 'deploy'))->not->toHaveKey('startCommand');
-    expect(data_get($railwayConfig, 'deploy.preDeployCommand'))->toBe('php artisan config:clear && php artisan migrate --force');
+    expect(data_get($railwayConfig, 'deploy.preDeployCommand'))->toBe('php artisan config:clear && php artisan migrate --force && php artisan db:seed --force');
     expect(data_get($railwayConfig, 'deploy.healthcheckPath'))->toBe('/up');
 });
 

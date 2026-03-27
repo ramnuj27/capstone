@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
@@ -21,6 +22,18 @@ test('users can authenticate using the login screen', function () {
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
+});
+
+test('seeded main admin can authenticate using the default credentials', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $response = $this->post(route('login.store'), [
+        'email' => 'admin@evaqready.test',
         'password' => 'password',
     ]);
 
