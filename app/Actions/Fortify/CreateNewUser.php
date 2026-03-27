@@ -28,6 +28,7 @@ class CreateNewUser implements CreatesNewUsers
     {
         $validator = Validator::make($input, [
             ...$this->profileRules(),
+            'offline_sync_id' => ['nullable', 'uuid', Rule::unique(User::class, 'offline_sync_id')],
             'password' => $this->passwordRules(),
             'household_role' => ['required', 'string', Rule::in(['resident', 'respondent'])],
             'age' => ['required', 'integer', 'min:0', 'max:130'],
@@ -62,6 +63,7 @@ class CreateNewUser implements CreatesNewUsers
         /** @var array{
          *     name: string,
          *     email: string,
+         *     offline_sync_id?: string|null,
          *     password: string,
          *     household_role: string,
          *     age: int,
@@ -88,6 +90,7 @@ class CreateNewUser implements CreatesNewUsers
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
+                'offline_sync_id' => $validated['offline_sync_id'] ?? null,
                 'password' => $validated['password'],
                 'role' => UserRole::Resident,
             ]);
@@ -179,9 +182,6 @@ class CreateNewUser implements CreatesNewUsers
         }
     }
 
-    /**
-     * @param  bool|int|string  $value
-     */
     private function booleanValue(bool|int|string $value): bool
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
@@ -215,6 +215,3 @@ class CreateNewUser implements CreatesNewUsers
         return $pwdTypeOther;
     }
 }
-
-
-

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\OfflineRegistrationController;
 use App\Http\Controllers\Auth\RegistrationCompleteController;
 use App\Support\PortalAccess;
 use Illuminate\Http\Request;
@@ -103,6 +104,10 @@ Route::inertia('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
     'content' => $welcomeContent,
 ])->name('home');
+
+Route::middleware('throttle:30,1')
+    ->post('offline-registrations', OfflineRegistrationController::class)
+    ->name('offline-registrations.store');
 
 Route::middleware('auth')->get('registration/complete', RegistrationCompleteController::class)
     ->name('registration.complete');

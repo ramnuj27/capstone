@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { initializeOfflineHouseholdRegistrationSync } from '@/lib/offline-household-registrations';
 import { registerPwaServiceWorker } from '@/lib/pwa';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
@@ -33,3 +34,4 @@ createInertiaApp({
 
 initializeTheme();
 registerPwaServiceWorker();
+initializeOfflineHouseholdRegistrationSync();

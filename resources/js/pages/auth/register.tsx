@@ -7,8 +7,8 @@ import {
     Trash2,
     Users,
 } from 'lucide-react';
-import { startTransition, useState } from 'react';
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import { startTransition, useEffect, useState } from 'react';
+import type { Dispatch, MouseEvent, ReactNode, SetStateAction } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -16,6 +16,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    OFFLINE_HOUSEHOLD_REGISTRATIONS_EVENT,
+    getOfflineHouseholdRegistrationSnapshot,
+    type OfflineHouseholdRegistrationSnapshot,
+    queueOfflineHouseholdRegistration,
+    removeOfflineHouseholdRegistration,
+} from '@/lib/offline-household-registrations';
 import { cn } from '@/lib/utils';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
@@ -73,6 +80,15 @@ export default function Register({ barangays }: Props) {
     const [pwdType, setPwdType] = useState('');
     const [pwdTypeOther, setPwdTypeOther] = useState('');
     const [members, setMembers] = useState<HouseholdMemberForm[]>([]);
+    const [isOnline, setIsOnline] = useState(() =>
+        typeof window === 'undefined' ? true : window.navigator.onLine,
+    );
+    const [savingOffline, setSavingOffline] = useState(false);
+    const [offlineFeedback, setOfflineFeedback] = useState<string | null>(null);
+    const [offlineSnapshot, setOfflineSnapshot] =
+        useState<OfflineHouseholdRegistrationSnapshot>(() =>
+            getOfflineHouseholdRegistrationSnapshot(),
+        );
 
     const ageGroup = resolveAgeGroup(age);
     const pwdLabel =
@@ -82,6 +98,95 @@ export default function Register({ barangays }: Props) {
                 : (pwdOptions.find((option) => option.value === pwdType)
                       ?.label ?? 'PWD type pending')
             : 'No PWD declared';
+    const lastSyncedRegistration = offlineSnapshot.lastSynced ?? null;
+
+    useEffect(() => {
+        const updateConnectionState = (): void => {
+            setIsOnline(window.navigator.onLine);
+        };
+
+        const updateOfflineSnapshot = (event: Event): void => {
+            const customEvent =
+                event as CustomEvent<OfflineHouseholdRegistrationSnapshot>;
+
+            setOfflineSnapshot(customEvent.detail);
+        };
+
+        updateConnectionState();
+        setOfflineSnapshot(getOfflineHouseholdRegistrationSnapshot());
+
+        window.addEventListener('online', updateConnectionState);
+        window.addEventListener('offline', updateConnectionState);
+        window.addEventListener(
+            OFFLINE_HOUSEHOLD_REGISTRATIONS_EVENT,
+            updateOfflineSnapshot as EventListener,
+        );
+
+        return () => {
+            window.removeEventListener('online', updateConnectionState);
+            window.removeEventListener('offline', updateConnectionState);
+            window.removeEventListener(
+                OFFLINE_HOUSEHOLD_REGISTRATIONS_EVENT,
+                updateOfflineSnapshot as EventListener,
+            );
+        };
+    }, []);
+
+    const saveOfflineRegistration = (form: HTMLFormElement): void => {
+        if (!form.reportValidity()) {
+            return;
+        }
+
+        setSavingOffline(true);
+
+        try {
+            const queuedRegistration = queueOfflineHouseholdRegistration(
+                new FormData(form),
+            );
+
+            form.reset();
+
+            startTransition(() => {
+                resetRegistrationState({
+                    setHouseholdRole,
+                    setAge,
+                    setSex,
+                    setBarangay,
+                    setIsPwd,
+                    setPwdType,
+                    setPwdTypeOther,
+                    setMembers,
+                });
+                setOfflineFeedback(
+                    `Saved on this device as ${queuedRegistration.localReferenceCode}. It will sync automatically when the connection returns.`,
+                );
+                setOfflineSnapshot(getOfflineHouseholdRegistrationSnapshot());
+            });
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'This registration could not be saved offline.';
+
+            startTransition(() => {
+                setOfflineFeedback(message);
+            });
+        } finally {
+            setSavingOffline(false);
+        }
+    };
+
+    const handleOfflineSave = (
+        event: MouseEvent<HTMLButtonElement>,
+    ): void => {
+        const form = event.currentTarget.form;
+
+        if (form === null) {
+            return;
+        }
+
+        saveOfflineRegistration(form);
+    };
 
     return (
         <>
@@ -92,6 +197,16 @@ export default function Register({ barangays }: Props) {
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
                 className="space-y-6"
+                onSubmitCapture={(event) => {
+                    if (isOnline) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    saveOfflineRegistration(event.currentTarget);
+                }}
             >
                 {({ processing, errors }) => (
                     <>
@@ -122,6 +237,134 @@ export default function Register({ barangays }: Props) {
                                 <StatusPill label="PWD" value={pwdLabel} />
                             </div>
                         </section>
+
+                        {(!isOnline
+                            || offlineFeedback !== null
+                            || offlineSnapshot.pendingCount > 0
+                            || offlineSnapshot.failedCount > 0
+                            || lastSyncedRegistration !== null) && (
+                            <section className="rounded-[1.75rem] border border-amber-200/80 bg-amber-50/92 p-5 shadow-sm dark:border-amber-400/20 dark:bg-amber-400/10">
+                                <div className="space-y-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="inline-flex items-center rounded-full border border-amber-300/80 bg-white/90 px-3 py-1 text-[0.68rem] font-semibold tracking-[0.24em] text-amber-900 uppercase dark:border-amber-300/25 dark:bg-slate-950/50 dark:text-amber-100">
+                                            Offline-ready registration
+                                        </span>
+                                        <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                            {isOnline
+                                                ? 'Online now. Pending registrations will sync automatically.'
+                                                : 'Offline now. New registrations will be saved on this device first.'}
+                                        </span>
+                                    </div>
+
+                                    {offlineFeedback !== null && (
+                                        <p className="text-sm leading-6 text-amber-950 dark:text-amber-50">
+                                            {offlineFeedback}
+                                        </p>
+                                    )}
+
+                                    {lastSyncedRegistration !== null && (
+                                        <p className="text-sm leading-6 text-amber-900 dark:text-amber-100">
+                                            Latest synced registration:{' '}
+                                            <span className="font-semibold">
+                                                {lastSyncedRegistration.email}
+                                            </span>
+                                            {lastSyncedRegistration.referenceCode !==
+                                                null && (
+                                                <>
+                                                    {' '}
+                                                    as{' '}
+                                                    <span className="font-semibold">
+                                                        {
+                                                            lastSyncedRegistration.referenceCode
+                                                        }
+                                                    </span>
+                                                </>
+                                            )}
+                                            .
+                                        </p>
+                                    )}
+
+                                    {(offlineSnapshot.pendingCount > 0
+                                        || offlineSnapshot.failedCount > 0) && (
+                                        <div className="space-y-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                <StatusPill
+                                                    label="Pending sync"
+                                                    value={`${offlineSnapshot.pendingCount}`}
+                                                />
+                                                <StatusPill
+                                                    label="Needs review"
+                                                    value={`${offlineSnapshot.failedCount}`}
+                                                />
+                                                <StatusPill
+                                                    label="Sync state"
+                                                    value={
+                                                        offlineSnapshot.isSyncing
+                                                            ? 'Syncing'
+                                                            : 'Idle'
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                {offlineSnapshot.items.map(
+                                                    (item) => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="flex flex-col gap-3 rounded-2xl border border-amber-200/80 bg-white/85 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-slate-950/55 sm:flex-row sm:items-start sm:justify-between"
+                                                        >
+                                                            <div className="space-y-1">
+                                                                <p className="text-sm font-semibold text-slate-950 dark:text-white">
+                                                                    {item.email}
+                                                                </p>
+                                                                <p className="text-xs font-medium tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
+                                                                    {
+                                                                        item.localReferenceCode
+                                                                    }{' '}
+                                                                    ·{' '}
+                                                                    {item.status ===
+                                                                    'pending'
+                                                                        ? 'Pending sync'
+                                                                        : 'Needs review'}
+                                                                </p>
+                                                                {item.lastError !==
+                                                                    null && (
+                                                                    <p className="text-sm leading-6 text-red-700 dark:text-red-300">
+                                                                        {
+                                                                            item.lastError
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                className="h-9 self-start rounded-full px-4 text-slate-700 dark:text-slate-200"
+                                                                onClick={() => {
+                                                                    startTransition(
+                                                                        () => {
+                                                                            removeOfflineHouseholdRegistration(
+                                                                                item.id,
+                                                                            );
+                                                                            setOfflineFeedback(
+                                                                                `Removed ${item.localReferenceCode} from this device queue.`,
+                                                                            );
+                                                                        },
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Remove
+                                                            </Button>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        )}
 
                         <SectionBlock
                             icon={House}
@@ -821,12 +1064,17 @@ export default function Register({ barangays }: Props) {
                             </div>
 
                             <Button
-                                type="submit"
+                                type={isOnline ? 'submit' : 'button'}
                                 className="mt-6 h-12 w-full rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_100%)] text-white shadow-lg shadow-slate-900/15 hover:opacity-95 dark:bg-[linear-gradient(135deg,#ffffff_0%,#e5e7eb_100%)] dark:text-slate-950"
                                 data-test="register-user-button"
+                                onClick={
+                                    isOnline ? undefined : handleOfflineSave
+                                }
                             >
-                                {processing && <Spinner />}
-                                Create household account
+                                {(processing || savingOffline) && <Spinner />}
+                                {isOnline
+                                    ? 'Create household account'
+                                    : 'Save for offline sync'}
                             </Button>
                         </SectionBlock>
 
@@ -1002,3 +1250,32 @@ Register.layout = {
     contentWidth: 'wide',
     variant: 'card',
 };
+
+function resetRegistrationState({
+    setHouseholdRole,
+    setAge,
+    setSex,
+    setBarangay,
+    setIsPwd,
+    setPwdType,
+    setPwdTypeOther,
+    setMembers,
+}: {
+    setHouseholdRole: Dispatch<SetStateAction<string>>;
+    setAge: Dispatch<SetStateAction<string>>;
+    setSex: Dispatch<SetStateAction<string>>;
+    setBarangay: Dispatch<SetStateAction<string>>;
+    setIsPwd: Dispatch<SetStateAction<string>>;
+    setPwdType: Dispatch<SetStateAction<string>>;
+    setPwdTypeOther: Dispatch<SetStateAction<string>>;
+    setMembers: Dispatch<SetStateAction<HouseholdMemberForm[]>>;
+}): void {
+    setHouseholdRole('');
+    setAge('');
+    setSex('');
+    setBarangay('');
+    setIsPwd('0');
+    setPwdType('');
+    setPwdTypeOther('');
+    setMembers([]);
+}
