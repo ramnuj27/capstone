@@ -3,26 +3,63 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
-$railwayMysqlDetected = (bool) (env('MYSQL_URL') ?? env('MYSQLHOST'));
-$railwayPgsqlDetected = (bool) (env('DATABASE_URL') ?? env('PGHOST'));
+$filledEnvironmentValue = static function (mixed ...$values): mixed {
+    foreach ($values as $value) {
+        if (! blank($value)) {
+            return $value;
+        }
+    }
+
+    return null;
+};
+
+$railwayMysqlDetected = $filledEnvironmentValue(env('MYSQL_URL'), env('MYSQLHOST')) !== null;
+$railwayPgsqlDetected = $filledEnvironmentValue(env('DATABASE_URL'), env('PGHOST')) !== null;
 $railwayDatabaseConnection = $railwayMysqlDetected
     ? 'mysql'
     : ($railwayPgsqlDetected ? 'pgsql' : 'sqlite');
 
-$databaseUrl = env('DB_URL');
-$mysqlUrl = $railwayMysqlDetected ? env('MYSQL_URL', $databaseUrl) : env('DB_URL', env('MYSQL_URL'));
-$mysqlHost = $railwayMysqlDetected ? env('MYSQLHOST', env('DB_HOST', '127.0.0.1')) : env('DB_HOST', env('MYSQLHOST', '127.0.0.1'));
-$mysqlPort = $railwayMysqlDetected ? env('MYSQLPORT', env('DB_PORT', '3306')) : env('DB_PORT', env('MYSQLPORT', '3306'));
-$mysqlDatabase = $railwayMysqlDetected ? env('MYSQLDATABASE', env('DB_DATABASE', 'laravel')) : env('DB_DATABASE', env('MYSQLDATABASE', 'laravel'));
-$mysqlUsername = $railwayMysqlDetected ? env('MYSQLUSER', env('DB_USERNAME', 'root')) : env('DB_USERNAME', env('MYSQLUSER', 'root'));
-$mysqlPassword = $railwayMysqlDetected ? env('MYSQLPASSWORD', env('DB_PASSWORD', '')) : env('DB_PASSWORD', env('MYSQLPASSWORD', ''));
-$pgsqlUrl = $railwayPgsqlDetected ? env('DATABASE_URL', $databaseUrl) : env('DB_URL', env('DATABASE_URL'));
-$pgsqlHost = $railwayPgsqlDetected ? env('PGHOST', env('DB_HOST', '127.0.0.1')) : env('DB_HOST', env('PGHOST', '127.0.0.1'));
-$pgsqlPort = $railwayPgsqlDetected ? env('PGPORT', env('DB_PORT', '5432')) : env('DB_PORT', env('PGPORT', '5432'));
-$pgsqlDatabase = $railwayPgsqlDetected ? env('PGDATABASE', env('DB_DATABASE', 'laravel')) : env('DB_DATABASE', env('PGDATABASE', 'laravel'));
-$pgsqlUsername = $railwayPgsqlDetected ? env('PGUSER', env('DB_USERNAME', 'root')) : env('DB_USERNAME', env('PGUSER', 'root'));
-$pgsqlPassword = $railwayPgsqlDetected ? env('PGPASSWORD', env('DB_PASSWORD', '')) : env('DB_PASSWORD', env('PGPASSWORD', ''));
-$pgsqlSslMode = $railwayPgsqlDetected ? env('PGSSLMODE', env('DB_SSLMODE', 'prefer')) : env('DB_SSLMODE', env('PGSSLMODE', 'prefer'));
+$databaseConnection = $filledEnvironmentValue(env('DB_CONNECTION'), $railwayDatabaseConnection);
+$databaseUrl = $filledEnvironmentValue(env('DB_URL'));
+$mysqlUrl = $railwayMysqlDetected
+    ? $filledEnvironmentValue(env('MYSQL_URL'), $databaseUrl)
+    : $filledEnvironmentValue($databaseUrl, env('MYSQL_URL'));
+$mysqlHost = $railwayMysqlDetected
+    ? $filledEnvironmentValue(env('MYSQLHOST'), env('DB_HOST'), '127.0.0.1')
+    : $filledEnvironmentValue(env('DB_HOST'), env('MYSQLHOST'), '127.0.0.1');
+$mysqlPort = $railwayMysqlDetected
+    ? $filledEnvironmentValue(env('MYSQLPORT'), env('DB_PORT'), '3306')
+    : $filledEnvironmentValue(env('DB_PORT'), env('MYSQLPORT'), '3306');
+$mysqlDatabase = $railwayMysqlDetected
+    ? $filledEnvironmentValue(env('MYSQLDATABASE'), env('DB_DATABASE'), 'laravel')
+    : $filledEnvironmentValue(env('DB_DATABASE'), env('MYSQLDATABASE'), 'laravel');
+$mysqlUsername = $railwayMysqlDetected
+    ? $filledEnvironmentValue(env('MYSQLUSER'), env('DB_USERNAME'), 'root')
+    : $filledEnvironmentValue(env('DB_USERNAME'), env('MYSQLUSER'), 'root');
+$mysqlPassword = $railwayMysqlDetected
+    ? $filledEnvironmentValue(env('MYSQLPASSWORD'), env('DB_PASSWORD'), '')
+    : $filledEnvironmentValue(env('DB_PASSWORD'), env('MYSQLPASSWORD'), '');
+$pgsqlUrl = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('DATABASE_URL'), $databaseUrl)
+    : $filledEnvironmentValue($databaseUrl, env('DATABASE_URL'));
+$pgsqlHost = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('PGHOST'), env('DB_HOST'), '127.0.0.1')
+    : $filledEnvironmentValue(env('DB_HOST'), env('PGHOST'), '127.0.0.1');
+$pgsqlPort = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('PGPORT'), env('DB_PORT'), '5432')
+    : $filledEnvironmentValue(env('DB_PORT'), env('PGPORT'), '5432');
+$pgsqlDatabase = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('PGDATABASE'), env('DB_DATABASE'), 'laravel')
+    : $filledEnvironmentValue(env('DB_DATABASE'), env('PGDATABASE'), 'laravel');
+$pgsqlUsername = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('PGUSER'), env('DB_USERNAME'), 'root')
+    : $filledEnvironmentValue(env('DB_USERNAME'), env('PGUSER'), 'root');
+$pgsqlPassword = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('PGPASSWORD'), env('DB_PASSWORD'), '')
+    : $filledEnvironmentValue(env('DB_PASSWORD'), env('PGPASSWORD'), '');
+$pgsqlSslMode = $railwayPgsqlDetected
+    ? $filledEnvironmentValue(env('PGSSLMODE'), env('DB_SSLMODE'), 'prefer')
+    : $filledEnvironmentValue(env('DB_SSLMODE'), env('PGSSLMODE'), 'prefer');
 
 return [
 
@@ -38,7 +75,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', $railwayDatabaseConnection),
+    'default' => $databaseConnection,
 
     /*
     |--------------------------------------------------------------------------
