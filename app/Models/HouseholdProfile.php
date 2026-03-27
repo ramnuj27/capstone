@@ -3,16 +3,21 @@
 namespace App\Models;
 
 use App\AgeGroup;
+use App\HouseholdEvacuationStatus;
 use App\Support\HouseholdReferenceCode;
+use Database\Factories\HouseholdProfileFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'user_id',
     'reference_code',
+    'evacuation_status',
+    'evacuation_status_updated_at',
     'household_role',
     'age',
     'age_group',
@@ -26,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class HouseholdProfile extends Model
 {
-    /** @use HasFactory<\Database\Factories\HouseholdProfileFactory> */
+    /** @use HasFactory<HouseholdProfileFactory> */
     use HasFactory;
 
     protected static function booted(): void
@@ -47,6 +52,8 @@ class HouseholdProfile extends Model
     {
         return [
             'age_group' => AgeGroup::class,
+            'evacuation_status' => HouseholdEvacuationStatus::class,
+            'evacuation_status_updated_at' => 'datetime',
             'is_pwd' => 'bool',
         ];
     }
@@ -59,5 +66,17 @@ class HouseholdProfile extends Model
     public function members(): HasMany
     {
         return $this->hasMany(HouseholdMember::class)->orderBy('position');
+    }
+
+    public function statusUpdates(): HasMany
+    {
+        return $this->hasMany(HouseholdStatusUpdate::class)
+            ->orderByDesc('recorded_at')
+            ->orderByDesc('id');
+    }
+
+    public function latestStatusUpdate(): HasOne
+    {
+        return $this->hasOne(HouseholdStatusUpdate::class)->latestOfMany('recorded_at');
     }
 }

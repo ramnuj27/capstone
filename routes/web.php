@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\Auth\OfflineRegistrationController;
 use App\Http\Controllers\Auth\RegistrationCompleteController;
+use App\Http\Controllers\Portal\HouseholdStatusUpdateController;
+use App\Http\Controllers\Portal\VictimStatusController;
 use App\Support\PortalAccess;
+use App\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -119,7 +122,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ));
     })->name('dashboard');
 
+    Route::middleware('role:'.UserRole::Responder->value)->group(function () {
+        Route::get('victim-status', VictimStatusController::class)
+            ->name('portal.victim-status');
+
+        Route::middleware('throttle:60,1')
+            ->post('victim-status/updates', HouseholdStatusUpdateController::class)
+            ->name('portal.victim-status-updates.store');
+    });
+
     foreach (PortalAccess::routeModules() as $module) {
+        if ($module['key'] === 'victim-status') {
+            continue;
+        }
+
         Route::get($module['path'], function (Request $request) use ($module) {
             return Inertia::render('portal/module', [
                 'module' => PortalAccess::modulePageProps(
