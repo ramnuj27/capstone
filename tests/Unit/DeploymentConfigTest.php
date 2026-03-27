@@ -94,6 +94,18 @@ test('app config can derive the hosted url from Railway when APP_URL is missing'
         ->toContain("'https://'.env('RAILWAY_PUBLIC_DOMAIN')");
 });
 
+test('bootstrap app provisions a persistent fallback app key when APP_KEY is missing', function (): void {
+    $bootstrapApp = file_get_contents(dirname(__DIR__, 2).'/bootstrap/app.php');
+
+    expect($bootstrapApp)
+        ->not->toBeFalse()
+        ->toContain("\$_ENV['APP_KEY'] ?? \$_SERVER['APP_KEY'] ?? getenv('APP_KEY') ?: null;")
+        ->toContain("\$appKeyCachePath = \$projectRoot.'/storage/framework/cache/railway-app.key';")
+        ->toContain("\$appKey = 'base64:'.base64_encode(random_bytes(32));")
+        ->toContain('file_put_contents($appKeyCachePath, $appKey, LOCK_EX);')
+        ->toContain('putenv("APP_KEY={$appKey}");');
+});
+
 test('hosted defaults avoid forcing database-backed sessions cache and queues', function (): void {
     $sessionConfig = file_get_contents(dirname(__DIR__, 2).'/config/session.php');
     $cacheConfig = file_get_contents(dirname(__DIR__, 2).'/config/cache.php');
