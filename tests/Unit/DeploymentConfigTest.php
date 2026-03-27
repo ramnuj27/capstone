@@ -153,3 +153,78 @@ test('hosted defaults avoid forcing database-backed sessions cache and queues', 
         ->toContain('CACHE_STORE=file')
         ->toContain('QUEUE_CONNECTION=sync');
 });
+
+test('capacitor android shell points at the hosted app and exposes android scripts', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+    $package = json_decode(
+        file_get_contents($projectRoot.'/package.json'),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+    $capacitorConfig = file_get_contents($projectRoot.'/capacitor.config.ts');
+
+    expect(data_get($package, 'scripts.cap:copy:android'))->toBe('npx cap copy android');
+    expect(data_get($package, 'scripts.cap:doctor'))->toBe('npx cap doctor');
+    expect(data_get($package, 'scripts.cap:open:android'))->toBe('npx cap open android');
+    expect(data_get($package, 'scripts.cap:run:android'))->toBe('npx cap run android');
+    expect(data_get($package, 'scripts.cap:sync:android'))->toBe('npx cap sync android');
+    expect(data_get($package, 'dependencies.@capacitor/android'))->not->toBeNull();
+    expect(data_get($package, 'dependencies.@capacitor/core'))->not->toBeNull();
+    expect(data_get($package, 'dependencies.@capacitor/network'))->not->toBeNull();
+    expect(data_get($package, 'devDependencies.@capacitor/cli'))->not->toBeNull();
+
+    expect($capacitorConfig)
+        ->not->toBeFalse()
+        ->toContain('process.env.CAPACITOR_SERVER_URL')
+        ->toContain("'https://capstone-production-54b4.up.railway.app'")
+        ->toContain("appId: 'com.evaqready.app'")
+        ->toContain("webDir: 'public/capacitor'")
+        ->toContain("errorPath: 'offline.html'")
+        ->toContain('allowMixedContent: false');
+});
+
+test('offline shell precaches critical routes and sync code listens for native connectivity', function (): void {
+    $projectRoot = dirname(__DIR__, 2);
+    $serviceWorker = file_get_contents($projectRoot.'/public/sw.js');
+    $capacitorIndex = file_get_contents($projectRoot.'/public/capacitor/index.html');
+    $capacitorOffline = file_get_contents($projectRoot.'/public/capacitor/offline.html');
+    $nativeRuntime = file_get_contents($projectRoot.'/resources/js/lib/native-runtime.ts');
+    $offlineRegistrations = file_get_contents($projectRoot.'/resources/js/lib/offline-household-registrations.ts');
+    $offlineVictimStatus = file_get_contents($projectRoot.'/resources/js/lib/offline-victim-status-updates.ts');
+
+    expect($serviceWorker)
+        ->not->toBeFalse()
+        ->toContain("const CACHE_VERSION = 'evaqready-pwa-v2';")
+        ->toContain("'/'")
+        ->toContain("'/login'")
+        ->toContain("'/register'");
+
+    expect($capacitorIndex)
+        ->not->toBeFalse()
+        ->toContain('EvaqReady Native Shell')
+        ->toContain('EvaqReady is launching.');
+
+    expect($capacitorOffline)
+        ->not->toBeFalse()
+        ->toContain('EvaqReady Offline')
+        ->toContain('Connection lost.');
+
+    expect($nativeRuntime)
+        ->not->toBeFalse()
+        ->toContain('Capacitor.isNativePlatform()')
+        ->toContain('await Network.getStatus()')
+        ->toContain("await Network.addListener('networkStatusChange'")
+        ->toContain("await CapacitorApp.addListener('appStateChange'");
+
+    expect($offlineRegistrations)
+        ->not->toBeFalse()
+        ->toContain('addNativeConnectivityListener')
+        ->toContain('addNativeResumeListener')
+        ->toContain('await isCurrentlyOnline()');
+
+    expect($offlineVictimStatus)
+        ->not->toBeFalse()
+        ->toContain('addNativeConnectivityListener')
+        ->toContain('addNativeResumeListener')
+        ->toContain('void warmOfflineVictimStatusExperience();');
+});

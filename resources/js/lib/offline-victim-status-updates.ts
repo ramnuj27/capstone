@@ -1,4 +1,10 @@
+import {
+    addNativeConnectivityListener,
+    addNativeResumeListener,
+    isCurrentlyOnline,
+} from '@/lib/native-runtime';
 import HouseholdStatusUpdateController from '@/actions/App/Http/Controllers/Portal/HouseholdStatusUpdateController';
+import { victimStatus } from '@/routes/portal';
 
 const QUEUE_STORAGE_KEY = 'evaqready.offline-victim-status-updates';
 const META_STORAGE_KEY = 'evaqready.offline-victim-status-updates.meta';
@@ -146,7 +152,7 @@ export async function recordVictimStatusUpdate(
 ): Promise<RecordVictimStatusUpdateResult> {
     const payload = buildPayload(input);
 
-    if (typeof window === 'undefined' || !window.navigator.onLine) {
+    if (typeof window === 'undefined' || !(await isCurrentlyOnline())) {
         const queuedUpdate = enqueueVictimStatusUpdate(payload);
 
         return {
@@ -228,12 +234,26 @@ export function initializeOfflineVictimStatusUpdateSync(): void {
         }
     });
 
+    void addNativeConnectivityListener((connected) => {
+        refreshSnapshot();
+
+        if (connected) {
+            void syncOfflineVictimStatusUpdates();
+            void warmOfflineVictimStatusExperience();
+        }
+    });
+    void addNativeResumeListener(() => {
+        void syncOfflineVictimStatusUpdates();
+        void warmOfflineVictimStatusExperience();
+    });
+
+    void warmOfflineVictimStatusExperience();
     void syncOfflineVictimStatusUpdates();
     emitSnapshot();
 }
 
 export async function syncOfflineVictimStatusUpdates(): Promise<OfflineVictimStatusSyncSummary> {
-    if (typeof window === 'undefined' || !window.navigator.onLine || syncInFlight) {
+    if (typeof window === 'undefined' || !(await isCurrentlyOnline()) || syncInFlight) {
         return {
             syncedCount: 0,
             failedCount: 0,
@@ -321,6 +341,20 @@ export async function syncOfflineVictimStatusUpdates(): Promise<OfflineVictimSta
         failedCount,
         retryCount,
     };
+}
+
+async function warmOfflineVictimStatusExperience(): Promise<void> {
+    if (typeof window === 'undefined' || !(await isCurrentlyOnline())) {
+        return;
+    }
+
+    void import('@/pages/portal/victim-status');
+    void fetch(victimStatus.url(), {
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    }).catch(() => undefined);
 }
 
 type SyncResult =

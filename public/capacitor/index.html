@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
+    <title>EvaqReady Native Shell</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: #081120;
+            color: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.24), transparent 38%),
+                linear-gradient(180deg, #081120 0%, #0f172a 100%);
+        }
+
+        main {
+            width: min(92vw, 28rem);
+            padding: 2rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 1.5rem;
+            background: rgba(15, 23, 42, 0.88);
+            box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+        }
+
+        p {
+            margin: 0.75rem 0 0;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        strong {
+            display: inline-flex;
+            margin-bottom: 0.75rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(14, 165, 233, 0.14);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: #bae6fd;
+            font-size: 0.76rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 8vw, 2.8rem);
+            line-height: 1.05;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <strong>Native Shell Ready</strong>
+        <h1>EvaqReady is launching.</h1>
+        <p>
+            This Android build uses the hosted EvaqReady system when a signal is available
+            and keeps a local native fallback page ready for connection failures.
+        </p>
+        <p>
+            If you stay on this screen for long, reopen the app when the device has a stable
+            connection.
+        </p>
+    </main>
+</body>
+</html>

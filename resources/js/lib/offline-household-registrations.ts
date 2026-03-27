@@ -1,3 +1,8 @@
+import {
+    addNativeConnectivityListener,
+    addNativeResumeListener,
+    isCurrentlyOnline,
+} from '@/lib/native-runtime';
 import { register } from '@/routes';
 import { store as storeOfflineRegistration } from '@/routes/offline-registrations';
 
@@ -183,13 +188,26 @@ export function initializeOfflineHouseholdRegistrationSync(): void {
         }
     });
 
-    warmOfflineRegistrationExperience();
+    void addNativeConnectivityListener((connected) => {
+        refreshSnapshot();
+
+        if (connected) {
+            void syncOfflineHouseholdRegistrations();
+            void warmOfflineRegistrationExperience();
+        }
+    });
+    void addNativeResumeListener(() => {
+        void syncOfflineHouseholdRegistrations();
+        void warmOfflineRegistrationExperience();
+    });
+
+    void warmOfflineRegistrationExperience();
     void syncOfflineHouseholdRegistrations();
     emitSnapshot();
 }
 
-function warmOfflineRegistrationExperience(): void {
-    if (typeof window === 'undefined' || !navigator.onLine) {
+async function warmOfflineRegistrationExperience(): Promise<void> {
+    if (typeof window === 'undefined' || !(await isCurrentlyOnline())) {
         return;
     }
 
@@ -205,7 +223,7 @@ function warmOfflineRegistrationExperience(): void {
 async function syncOfflineHouseholdRegistrations(): Promise<void> {
     if (
         typeof window === 'undefined'
-        || !navigator.onLine
+        || !(await isCurrentlyOnline())
         || syncInFlight
     ) {
         return;

@@ -1,9 +1,12 @@
-const CACHE_VERSION = 'evaqready-pwa-v1';
+const CACHE_VERSION = 'evaqready-pwa-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
     OFFLINE_URL,
+    '/',
+    '/login',
+    '/register',
     '/manifest.webmanifest',
     '/favicon.ico',
     '/favicon.svg',
