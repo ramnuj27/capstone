@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Str;
 
+$productionEnvironment = env('APP_ENV', 'production') === 'production';
+
 return [
 
     /*
@@ -18,7 +20,7 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', $productionEnvironment ? 'file' : 'database'),
 
     /*
     |--------------------------------------------------------------------------

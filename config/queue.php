@@ -1,5 +1,7 @@
 <?php
 
+$productionEnvironment = env('APP_ENV', 'production') === 'production';
+
 return [
 
     /*
@@ -13,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'database'),
+    'default' => env('QUEUE_CONNECTION', $productionEnvironment ? 'sync' : 'database'),
 
     /*
     |--------------------------------------------------------------------------

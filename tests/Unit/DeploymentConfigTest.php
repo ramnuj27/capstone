@@ -59,3 +59,31 @@ test('app config can derive the hosted url from Railway when APP_URL is missing'
         ->toContain("env('RAILWAY_PUBLIC_DOMAIN')")
         ->toContain("'https://'.env('RAILWAY_PUBLIC_DOMAIN')");
 });
+
+test('hosted defaults avoid forcing database-backed sessions cache and queues', function (): void {
+    $sessionConfig = file_get_contents(dirname(__DIR__, 2).'/config/session.php');
+    $cacheConfig = file_get_contents(dirname(__DIR__, 2).'/config/cache.php');
+    $queueConfig = file_get_contents(dirname(__DIR__, 2).'/config/queue.php');
+    $environmentExample = file_get_contents(dirname(__DIR__, 2).'/.env.example');
+
+    expect($sessionConfig)
+        ->not->toBeFalse()
+        ->toContain("\$productionEnvironment = env('APP_ENV', 'production') === 'production';")
+        ->toContain("'driver' => env('SESSION_DRIVER', \$productionEnvironment ? 'file' : 'database')");
+
+    expect($cacheConfig)
+        ->not->toBeFalse()
+        ->toContain("\$productionEnvironment = env('APP_ENV', 'production') === 'production';")
+        ->toContain("'default' => env('CACHE_STORE', \$productionEnvironment ? 'file' : 'database')");
+
+    expect($queueConfig)
+        ->not->toBeFalse()
+        ->toContain("\$productionEnvironment = env('APP_ENV', 'production') === 'production';")
+        ->toContain("'default' => env('QUEUE_CONNECTION', \$productionEnvironment ? 'sync' : 'database')");
+
+    expect($environmentExample)
+        ->not->toBeFalse()
+        ->toContain('SESSION_DRIVER=file')
+        ->toContain('CACHE_STORE=file')
+        ->toContain('QUEUE_CONNECTION=sync');
+});
