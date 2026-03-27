@@ -9,6 +9,21 @@ $railwayDatabaseConnection = $railwayMysqlDetected
     ? 'mysql'
     : ($railwayPgsqlDetected ? 'pgsql' : 'sqlite');
 
+$databaseUrl = env('DB_URL');
+$mysqlUrl = $railwayMysqlDetected ? env('MYSQL_URL', $databaseUrl) : env('DB_URL', env('MYSQL_URL'));
+$mysqlHost = $railwayMysqlDetected ? env('MYSQLHOST', env('DB_HOST', '127.0.0.1')) : env('DB_HOST', env('MYSQLHOST', '127.0.0.1'));
+$mysqlPort = $railwayMysqlDetected ? env('MYSQLPORT', env('DB_PORT', '3306')) : env('DB_PORT', env('MYSQLPORT', '3306'));
+$mysqlDatabase = $railwayMysqlDetected ? env('MYSQLDATABASE', env('DB_DATABASE', 'laravel')) : env('DB_DATABASE', env('MYSQLDATABASE', 'laravel'));
+$mysqlUsername = $railwayMysqlDetected ? env('MYSQLUSER', env('DB_USERNAME', 'root')) : env('DB_USERNAME', env('MYSQLUSER', 'root'));
+$mysqlPassword = $railwayMysqlDetected ? env('MYSQLPASSWORD', env('DB_PASSWORD', '')) : env('DB_PASSWORD', env('MYSQLPASSWORD', ''));
+$pgsqlUrl = $railwayPgsqlDetected ? env('DATABASE_URL', $databaseUrl) : env('DB_URL', env('DATABASE_URL'));
+$pgsqlHost = $railwayPgsqlDetected ? env('PGHOST', env('DB_HOST', '127.0.0.1')) : env('DB_HOST', env('PGHOST', '127.0.0.1'));
+$pgsqlPort = $railwayPgsqlDetected ? env('PGPORT', env('DB_PORT', '5432')) : env('DB_PORT', env('PGPORT', '5432'));
+$pgsqlDatabase = $railwayPgsqlDetected ? env('PGDATABASE', env('DB_DATABASE', 'laravel')) : env('DB_DATABASE', env('PGDATABASE', 'laravel'));
+$pgsqlUsername = $railwayPgsqlDetected ? env('PGUSER', env('DB_USERNAME', 'root')) : env('DB_USERNAME', env('PGUSER', 'root'));
+$pgsqlPassword = $railwayPgsqlDetected ? env('PGPASSWORD', env('DB_PASSWORD', '')) : env('DB_PASSWORD', env('PGPASSWORD', ''));
+$pgsqlSslMode = $railwayPgsqlDetected ? env('PGSSLMODE', env('DB_SSLMODE', 'prefer')) : env('DB_SSLMODE', env('PGSSLMODE', 'prefer'));
+
 return [
 
     /*
@@ -52,12 +67,12 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL', env('MYSQL_URL')),
-            'host' => env('DB_HOST', env('MYSQLHOST', '127.0.0.1')),
-            'port' => env('DB_PORT', env('MYSQLPORT', '3306')),
-            'database' => env('DB_DATABASE', env('MYSQLDATABASE', 'laravel')),
-            'username' => env('DB_USERNAME', env('MYSQLUSER', 'root')),
-            'password' => env('DB_PASSWORD', env('MYSQLPASSWORD', '')),
+            'url' => $mysqlUrl,
+            'host' => $mysqlHost,
+            'port' => $mysqlPort,
+            'database' => $mysqlDatabase,
+            'username' => $mysqlUsername,
+            'password' => $mysqlPassword,
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -72,12 +87,12 @@ return [
 
         'mariadb' => [
             'driver' => 'mariadb',
-            'url' => env('DB_URL', env('MYSQL_URL')),
-            'host' => env('DB_HOST', env('MYSQLHOST', '127.0.0.1')),
-            'port' => env('DB_PORT', env('MYSQLPORT', '3306')),
-            'database' => env('DB_DATABASE', env('MYSQLDATABASE', 'laravel')),
-            'username' => env('DB_USERNAME', env('MYSQLUSER', 'root')),
-            'password' => env('DB_PASSWORD', env('MYSQLPASSWORD', '')),
+            'url' => $mysqlUrl,
+            'host' => $mysqlHost,
+            'port' => $mysqlPort,
+            'database' => $mysqlDatabase,
+            'username' => $mysqlUsername,
+            'password' => $mysqlPassword,
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -92,17 +107,17 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL', env('DATABASE_URL')),
-            'host' => env('DB_HOST', env('PGHOST', '127.0.0.1')),
-            'port' => env('DB_PORT', env('PGPORT', '5432')),
-            'database' => env('DB_DATABASE', env('PGDATABASE', 'laravel')),
-            'username' => env('DB_USERNAME', env('PGUSER', 'root')),
-            'password' => env('DB_PASSWORD', env('PGPASSWORD', '')),
+            'url' => $pgsqlUrl,
+            'host' => $pgsqlHost,
+            'port' => $pgsqlPort,
+            'database' => $pgsqlDatabase,
+            'username' => $pgsqlUsername,
+            'password' => $pgsqlPassword,
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => env('DB_SCHEMA', 'public'),
-            'sslmode' => env('DB_SSLMODE', env('PGSSLMODE', 'prefer')),
+            'sslmode' => $pgsqlSslMode,
         ],
 
         'sqlsrv' => [
