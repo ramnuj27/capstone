@@ -94,6 +94,15 @@ test('app config can derive the hosted url from Railway when APP_URL is missing'
         ->toContain("'https://'.env('RAILWAY_PUBLIC_DOMAIN')");
 });
 
+test('app service provider forces https URL generation when Railway hosts the app', function (): void {
+    $appServiceProvider = file_get_contents(dirname(__DIR__, 2).'/app/Providers/AppServiceProvider.php');
+
+    expect($appServiceProvider)
+        ->not->toBeFalse()
+        ->toContain("filled((string) env('RAILWAY_PUBLIC_DOMAIN'))")
+        ->toContain("URL::forceScheme('https');");
+});
+
 test('bootstrap app provisions a persistent fallback app key when APP_KEY is missing', function (): void {
     $bootstrapApp = file_get_contents(dirname(__DIR__, 2).'/bootstrap/app.php');
 
