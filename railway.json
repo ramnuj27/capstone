@@ -4,7 +4,6 @@
         "builder": "RAILPACK"
     },
     "deploy": {
-        "startCommand": "php artisan serve --host=0.0.0.0 --port=${PORT}",
         "preDeployCommand": "php artisan migrate --force",
         "healthcheckPath": "/up",
         "healthcheckTimeout": 120,

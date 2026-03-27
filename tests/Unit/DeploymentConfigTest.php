@@ -31,7 +31,7 @@ test('railway deployment config serves Laravel and runs migrations before start'
     );
 
     expect(data_get($railwayConfig, 'build.builder'))->toBe('RAILPACK');
-    expect(data_get($railwayConfig, 'deploy.startCommand'))->toBe('php artisan serve --host=0.0.0.0 --port=${PORT}');
+    expect(data_get($railwayConfig, 'deploy'))->not->toHaveKey('startCommand');
     expect(data_get($railwayConfig, 'deploy.preDeployCommand'))->toBe('php artisan migrate --force');
     expect(data_get($railwayConfig, 'deploy.healthcheckPath'))->toBe('/up');
 });
@@ -49,4 +49,13 @@ test('database config supports Railway MySQL service variables', function (): vo
         ->toContain("'database' => env('DB_DATABASE', env('MYSQLDATABASE', 'laravel'))")
         ->toContain("'username' => env('DB_USERNAME', env('MYSQLUSER', 'root'))")
         ->toContain("'password' => env('DB_PASSWORD', env('MYSQLPASSWORD', ''))");
+});
+
+test('app config can derive the hosted url from Railway when APP_URL is missing', function (): void {
+    $appConfig = file_get_contents(dirname(__DIR__, 2).'/config/app.php');
+
+    expect($appConfig)
+        ->not->toBeFalse()
+        ->toContain("env('RAILWAY_PUBLIC_DOMAIN')")
+        ->toContain("'https://'.env('RAILWAY_PUBLIC_DOMAIN')");
 });
