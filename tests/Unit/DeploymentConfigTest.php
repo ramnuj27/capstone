@@ -32,23 +32,31 @@ test('railway deployment config serves Laravel and runs migrations before start'
 
     expect(data_get($railwayConfig, 'build.builder'))->toBe('RAILPACK');
     expect(data_get($railwayConfig, 'deploy'))->not->toHaveKey('startCommand');
-    expect(data_get($railwayConfig, 'deploy.preDeployCommand'))->toBe('php artisan migrate --force');
+    expect(data_get($railwayConfig, 'deploy.preDeployCommand'))->toBe('php artisan config:clear && php artisan migrate --force');
     expect(data_get($railwayConfig, 'deploy.healthcheckPath'))->toBe('/up');
 });
 
-test('database config supports Railway MySQL service variables', function (): void {
+test('database config supports Railway MySQL and PostgreSQL service variables', function (): void {
     $databaseConfig = file_get_contents(dirname(__DIR__, 2).'/config/database.php');
 
     expect($databaseConfig)
         ->not->toBeFalse()
         ->toContain("\$railwayMysqlDetected = (bool) (env('MYSQL_URL') ?? env('MYSQLHOST'));")
-        ->toContain("'default' => env('DB_CONNECTION', \$railwayMysqlDetected ? 'mysql' : 'sqlite')")
+        ->toContain("\$railwayPgsqlDetected = (bool) (env('DATABASE_URL') ?? env('PGHOST'));")
+        ->toContain('$railwayDatabaseConnection = $railwayMysqlDetected')
+        ->toContain("'default' => env('DB_CONNECTION', \$railwayDatabaseConnection)")
         ->toContain("'url' => env('DB_URL', env('MYSQL_URL'))")
         ->toContain("'host' => env('DB_HOST', env('MYSQLHOST', '127.0.0.1'))")
         ->toContain("'port' => env('DB_PORT', env('MYSQLPORT', '3306'))")
         ->toContain("'database' => env('DB_DATABASE', env('MYSQLDATABASE', 'laravel'))")
         ->toContain("'username' => env('DB_USERNAME', env('MYSQLUSER', 'root'))")
-        ->toContain("'password' => env('DB_PASSWORD', env('MYSQLPASSWORD', ''))");
+        ->toContain("'password' => env('DB_PASSWORD', env('MYSQLPASSWORD', ''))")
+        ->toContain("'url' => env('DB_URL', env('DATABASE_URL'))")
+        ->toContain("'host' => env('DB_HOST', env('PGHOST', '127.0.0.1'))")
+        ->toContain("'port' => env('DB_PORT', env('PGPORT', '5432'))")
+        ->toContain("'database' => env('DB_DATABASE', env('PGDATABASE', 'laravel'))")
+        ->toContain("'username' => env('DB_USERNAME', env('PGUSER', 'root'))")
+        ->toContain("'password' => env('DB_PASSWORD', env('PGPASSWORD', ''))");
 });
 
 test('app config can derive the hosted url from Railway when APP_URL is missing', function (): void {
