@@ -98,29 +98,29 @@ export default function Welcome({ canRegister = true, content }: WelcomeProps) {
                 <div className="pointer-events-none absolute top-32 right-1/4 h-64 w-64 rounded-full bg-orange-100/70 blur-3xl dark:bg-amber-400/10" />
                 <div className="pointer-events-none absolute right-0 bottom-0 h-80 w-80 rounded-full bg-rose-100/60 blur-3xl dark:bg-sky-500/10" />
 
-                <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-6 lg:px-8">
-                    <header className="flex flex-col gap-4 rounded-full border border-stone-200/80 bg-[#fff8f1]/96 px-5 py-4 shadow-sm backdrop-blur-md md:flex-row md:items-center md:justify-between dark:border-white/10 dark:bg-slate-950/80">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+                <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+                    <header className="flex flex-col gap-4 rounded-[2rem] border border-stone-200/80 bg-[#fff8f1]/96 px-4 py-4 shadow-sm backdrop-blur-md sm:px-5 md:flex-row md:items-center md:justify-between md:rounded-full dark:border-white/10 dark:bg-slate-950/80">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
                                 <AppLogoIcon className="size-5 fill-current" />
                             </div>
 
-                            <div>
-                                <p className="text-[0.65rem] font-semibold tracking-[0.35em] text-emerald-700 uppercase dark:text-emerald-300">
+                            <div className="min-w-0">
+                                <p className="text-[0.64rem] font-semibold tracking-[0.22em] text-emerald-700 uppercase sm:text-[0.65rem] sm:tracking-[0.35em] dark:text-emerald-300">
                                     {content.header.eyebrow}
                                 </p>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                <p className="text-base font-semibold text-slate-900 sm:text-sm dark:text-white">
                                     {content.header.title}
                                 </p>
                             </div>
                         </div>
 
-                        <nav className="flex flex-wrap items-center gap-3">
+                        <nav className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:flex md:w-auto md:flex-wrap md:items-center">
                             {isAuthenticated ? (
                                 <Button
                                     asChild
                                     size="sm"
-                                    className="rounded-full px-5"
+                                    className="w-full rounded-full px-5 md:w-auto"
                                 >
                                     <Link href={dashboard()}>
                                         Dashboard
@@ -133,7 +133,7 @@ export default function Welcome({ canRegister = true, content }: WelcomeProps) {
                                         asChild
                                         size="sm"
                                         variant="ghost"
-                                        className="rounded-full border border-stone-200/80 bg-[#fffaf4] px-5 text-slate-700 hover:bg-[#f6ecdf] dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+                                        className="w-full rounded-full border border-stone-200/80 bg-[#fffaf4] px-5 text-slate-700 hover:bg-[#f6ecdf] dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10 md:w-auto"
                                     >
                                         <Link href={login()}>Sign in</Link>
                                     </Button>
@@ -142,7 +142,7 @@ export default function Welcome({ canRegister = true, content }: WelcomeProps) {
                                         <Button
                                             asChild
                                             size="sm"
-                                            className="rounded-full px-5"
+                                            className="w-full rounded-full px-5 md:w-auto"
                                         >
                                             <Link href={register()}>
                                                 Register
@@ -178,7 +178,7 @@ export default function Welcome({ canRegister = true, content }: WelcomeProps) {
                                         <Button
                                             asChild
                                             size="lg"
-                                            className="rounded-full px-6 shadow-lg shadow-emerald-500/20"
+                                            className="w-full rounded-full px-6 shadow-lg shadow-emerald-500/20 sm:w-auto"
                                         >
                                             <Link href={primaryAction.href}>
                                                 {primaryAction.label}
@@ -191,7 +191,7 @@ export default function Welcome({ canRegister = true, content }: WelcomeProps) {
                                                 asChild
                                                 size="lg"
                                                 variant="outline"
-                                                className="rounded-full border-stone-200/80 bg-[#fff8f1]/96 px-6 dark:border-white/10 dark:bg-white/5"
+                                                className="w-full rounded-full border-stone-200/80 bg-[#fff8f1]/96 px-6 sm:w-auto dark:border-white/10 dark:bg-white/5"
                                             >
                                                 <Link
                                                     href={secondaryAction.href}

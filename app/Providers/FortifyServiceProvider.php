@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\RegisterResponse;
+use App\Models\User;
 use App\Support\MatiBarangays;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Features;
@@ -32,6 +35,7 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureActions();
+        $this->configureAuthentication();
         $this->configureViews();
         $this->configureRateLimiting();
     }
@@ -46,13 +50,35 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
+     * Configure custom authentication behavior.
+     */
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request): ?User {
+            $email = Str::lower($request->string(Fortify::username())->trim()->toString());
+            $user = User::query()->firstWhere('email', $email);
+
+            if ($user === null || ! Hash::check($request->string('password')->toString(), $user->password)) {
+                return null;
+            }
+
+            if (! $user->hasVerifiedEmail()) {
+                throw ValidationException::withMessages([
+                    Fortify::username() => 'Confirm the code we sent to your email address before logging in.',
+                ]);
+            }
+
+            return $user;
+        });
+    }
+
+    /**
      * Configure Fortify views.
      */
     private function configureViews(): void
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -66,7 +92,15 @@ class FortifyServiceProvider extends ServiceProvider
         ]));
 
         Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/verify-email', [
-            'status' => $request->session()->get('status'),
+            'email' => $request->user()?->email,
+            'canEditEmail' => false,
+            'codePreview' => $request->session()->get('emailVerificationCodePreview'),
+            'isAuthenticated' => true,
+            'status' => match ($request->session()->get('status')) {
+                'verification-link-sent' => 'We sent a new confirmation code to your email address.',
+                default => $request->session()->get('status')
+                    ?? 'Enter the confirmation code we sent to your email address to continue.',
+            },
         ]));
 
         Fortify::registerView(fn () => Inertia::render('auth/register', [

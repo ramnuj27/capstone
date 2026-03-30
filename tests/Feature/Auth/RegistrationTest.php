@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\Auth\EmailVerificationCodeNotification;
 use App\Support\MatiBarangays;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
@@ -22,6 +24,8 @@ test('registration screen can be rendered', function () {
 });
 
 test('new households can register with members', function () {
+    Notification::fake();
+
     $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -54,7 +58,7 @@ test('new households can register with members', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('registration.complete', absolute: false));
+    $response->assertRedirect(route('verification.notice', absolute: false));
 
     $this->assertDatabaseHas('users', [
         'name' => 'Test User',
@@ -99,10 +103,21 @@ test('new households can register with members', function () {
         ->where('email', 'test@example.com')
         ->firstOrFail();
 
+    Notification::assertSentTo($user, EmailVerificationCodeNotification::class);
+
     expect($user->householdProfile)->not->toBeNull();
     expect($user->householdProfile?->reference_code)->toMatch('/^EVQ-MATI-[A-Z0-9]{6}$/');
 
-    $this->get(route('registration.complete'))
+    $this->actingAs($user)
+        ->get(route('registration.complete'))
+        ->assertRedirect(route('verification.notice', absolute: false));
+
+    $user->forceFill([
+        'email_verified_at' => now(),
+    ])->save();
+
+    $this->actingAs($user)
+        ->get(route('registration.complete'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('auth/registration-complete')
@@ -121,6 +136,35 @@ test('new households can register with members', function () {
             ->where('summary.members.1.ageGroup', 'Senior')
             ->etc(),
         );
+});
+
+test('registration falls back to a local preview code when email delivery fails', function () {
+    config()->set('mail.default', 'smtp');
+    config()->set('mail.mailers.smtp.scheme', 'tls');
+
+    $response = $this->post(route('register.store'), [
+        'name' => 'Fallback User',
+        'email' => 'fallback@example.com',
+        'household_role' => 'resident',
+        'age' => 24,
+        'contact_number' => '09123456788',
+        'sex' => 'male',
+        'is_pwd' => '0',
+        'barangay' => 'Central',
+        'address' => 'Purok Uno, Central, Mati City',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('verification.notice', absolute: false));
+    $response->assertSessionHas(
+        'status',
+        'We generated a confirmation code, but this local machine could not deliver email. Use the preview code shown on the next page.',
+    );
+    $response->assertSessionHas('emailVerificationCodePreview', function ($code): bool {
+        return is_string($code) && preg_match('/^\d{6}$/', $code) === 1;
+    });
 });
 
 test('barangay must belong to mati city list', function () {

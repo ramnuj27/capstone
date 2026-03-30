@@ -46,8 +46,14 @@ test('main admin map monitoring module includes mati city map focus', function (
         );
 });
 
-test('main admin users management module shows live account metrics', function () {
+test('main admin users management module exposes searchable directory data', function () {
     $admin = User::factory()->mainAdmin()->create(['name' => 'City Admin']);
+
+    $barangayAdmin = User::factory()->barangayAdmin()->create([
+        'name' => 'Central Admin',
+        'email' => 'central-admin@example.com',
+    ]);
+    HouseholdProfile::factory()->for($barangayAdmin)->create(['barangay' => 'Central']);
 
     $resident = User::factory()->resident()->create([
         'name' => 'Resident Alpha',
@@ -66,17 +72,24 @@ test('main admin users management module shows live account metrics', function (
         ->assertOk();
 
     $page = $response->viewData('page');
+    $directoryRecords = collect(data_get($page, 'props.module.workspace.userDirectory.records', []));
+    $centralAdminRecord = $directoryRecords->firstWhere('email', 'central-admin@example.com');
 
     expect($page['component'])->toBe('portal/module');
     expect(data_get($page, 'props.module.workspace.title'))->toBe('Users overview');
     expect(data_get($page, 'props.module.workspace.metrics.0.label'))->toBe('Total users');
-    expect(data_get($page, 'props.module.workspace.metrics.0.value'))->toBe('3');
-    expect(data_get($page, 'props.module.workspace.metrics.3.value'))->toBe('2');
+    expect(data_get($page, 'props.module.workspace.metrics.0.value'))->toBe('4');
+    expect(data_get($page, 'props.module.workspace.metrics.3.value'))->toBe('3');
     expect(data_get($page, 'props.module.workspace.sections.0.title'))->toBe('Latest accounts');
     expect(data_get($page, 'props.module.workspace.sections.0.rows.0.primary'))->toBe('Responder Bravo');
     expect(data_get($page, 'props.module.workspace.sections.1.title'))->toBe('Role distribution');
-    expect(data_get($page, 'props.module.workspace.sections.1.rows.2.primary'))->toBe('Responder');
-    expect(data_get($page, 'props.module.workspace.sections.1.rows.2.secondary'))->toBe('1 accounts');
+    expect(data_get($page, 'props.module.workspace.sections.1.rows.1.primary'))->toBe('Barangay Admin');
+    expect(data_get($page, 'props.module.workspace.sections.1.rows.1.secondary'))->toBe('1 accounts');
+    expect(data_get($page, 'props.module.workspace.userDirectory.roleOptions.1.label'))->toBe('Barangay Admin');
+    expect(data_get($page, 'props.module.workspace.userDirectory.barangays'))->toContain('Central', 'Dahican');
+    expect($centralAdminRecord)->not->toBeNull();
+    expect(data_get($centralAdminRecord, 'role'))->toBe('barangay_admin');
+    expect(data_get($centralAdminRecord, 'barangay'))->toBe('Central');
 });
 
 test('main admin users management module can be json encoded for inertia payloads', function () {

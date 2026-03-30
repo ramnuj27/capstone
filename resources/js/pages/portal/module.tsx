@@ -1,5 +1,9 @@
-import { Head } from '@inertiajs/react';
+﻿import { Head } from '@inertiajs/react';
 import { MapPinned } from 'lucide-react';
+import {
+    PortalUsersManagementWorkspace,
+    type UsersManagementModuleProps,
+} from '@/components/portal-users-management-workspace';
 import { PortalInteractiveMap } from '@/components/portal-interactive-map';
 import { getPortalIcon } from '@/lib/portal-icons';
 import { dashboard } from '@/routes';
@@ -33,6 +37,15 @@ type Props = {
 
 export default function PortalModule({ module }: Props) {
     const Icon = getPortalIcon(module.icon);
+
+    if (module.key === 'users-management' && module.workspace?.userDirectory) {
+        return (
+            <PortalUsersManagementWorkspace
+                module={module as UsersManagementModuleProps}
+                Icon={Icon}
+            />
+        );
+    }
 
     if (module.mapFocus) {
         const mapModule: ModuleProps & { mapFocus: PortalMapFocus } = {

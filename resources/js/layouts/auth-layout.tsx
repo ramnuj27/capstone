@@ -1,4 +1,5 @@
 import AuthCardLayout from '@/layouts/auth/auth-card-layout';
+import AuthMinimalLayout from '@/layouts/auth/auth-minimal-layout';
 import AuthSimpleLayout from '@/layouts/auth/auth-simple-layout';
 
 export default function AuthLayout({
@@ -11,11 +12,15 @@ export default function AuthLayout({
     title?: string;
     description?: string;
     contentWidth?: 'default' | 'wide';
-    variant?: 'simple' | 'card';
+    variant?: 'simple' | 'card' | 'minimal';
     children: React.ReactNode;
 }) {
     const LayoutTemplate =
-        variant === 'card' ? AuthCardLayout : AuthSimpleLayout;
+        variant === 'card'
+            ? AuthCardLayout
+            : variant === 'minimal'
+              ? AuthMinimalLayout
+              : AuthSimpleLayout;
 
     return (
         <LayoutTemplate

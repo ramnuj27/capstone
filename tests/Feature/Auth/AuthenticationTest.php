@@ -12,7 +12,6 @@ test('login screen can be rendered', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('auth/login')
             ->where('canResetPassword', Features::enabled(Features::resetPasswords()))
-            ->where('canRegister', Features::enabled(Features::registration()))
             ->etc(),
         );
 });
@@ -27,6 +26,21 @@ test('users can authenticate using the login screen', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
+});
+
+test('unverified users can not authenticate using the login screen', function () {
+    $user = User::factory()->unverified()->create();
+
+    $response = $this->from(route('login'))->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHasErrors([
+        'email' => 'Confirm the code we sent to your email address before logging in.',
+    ]);
 });
 
 test('seeded main admin can authenticate using the default credentials', function () {

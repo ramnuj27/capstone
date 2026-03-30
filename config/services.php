@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
+    ],
+
+    'firebase' => [
+        'api_key' => env('FIREBASE_API_KEY', env('VITE_FIREBASE_API_KEY')),
+        'project_id' => env('FIREBASE_PROJECT_ID', env('VITE_FIREBASE_PROJECT_ID')),
+        'auth_domain' => env('FIREBASE_AUTH_DOMAIN', env('VITE_FIREBASE_AUTH_DOMAIN')),
+        'storage_bucket' => env('FIREBASE_STORAGE_BUCKET', env('VITE_FIREBASE_STORAGE_BUCKET')),
+        'messaging_sender_id' => env('FIREBASE_MESSAGING_SENDER_ID', env('VITE_FIREBASE_MESSAGING_SENDER_ID')),
+        'app_id' => env('FIREBASE_APP_ID', env('VITE_FIREBASE_APP_ID')),
+        'measurement_id' => env('FIREBASE_MEASUREMENT_ID', env('VITE_FIREBASE_MEASUREMENT_ID')),
+    ],
+
 ];

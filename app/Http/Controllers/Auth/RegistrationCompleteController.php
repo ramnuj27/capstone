@@ -15,8 +15,7 @@ class RegistrationCompleteController extends Controller
 {
     public function __construct(
         private readonly HouseholdQrCode $householdQrCode,
-    ) {
-    }
+    ) {}
 
     /**
      * Handle the incoming request.
@@ -26,13 +25,13 @@ class RegistrationCompleteController extends Controller
         $authenticatedUser = $request->user();
 
         if ($authenticatedUser === null) {
-            return redirect()->route('dashboard');
+            return $this->redirectToDashboard();
         }
 
         $user = $authenticatedUser->fresh();
 
         if ($user === null) {
-            return redirect()->route('dashboard');
+            return $this->redirectToDashboard();
         }
 
         $user->load('householdProfile.members');
@@ -40,7 +39,7 @@ class RegistrationCompleteController extends Controller
         $householdProfile = $user->householdProfile;
 
         if ($householdProfile === null || ! is_string($householdProfile->reference_code)) {
-            return redirect()->route('dashboard');
+            return $this->redirectToDashboard();
         }
 
         return Inertia::render('auth/registration-complete', [
@@ -79,6 +78,11 @@ class RegistrationCompleteController extends Controller
                     ->all(),
             ],
         ]);
+    }
+
+    private function redirectToDashboard(): RedirectResponse
+    {
+        return redirect()->away(route('dashboard', absolute: false));
     }
 
     private function pwdLabel(bool $isPwd, ?string $pwdType): string

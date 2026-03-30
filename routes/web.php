@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Auth\EmailVerificationCodeController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\OfflineRegistrationController;
 use App\Http\Controllers\Auth\RegistrationCompleteController;
 use App\Http\Controllers\Portal\HouseholdStatusUpdateController;
+use App\Http\Controllers\Portal\PortalUserManagementController;
 use App\Http\Controllers\Portal\VictimStatusController;
 use App\Support\PortalAccess;
 use App\UserRole;
@@ -70,8 +73,8 @@ $welcomeContent = [
         ],
         [
             'icon' => 'layout-dashboard',
-            'title' => 'Scan at the evacuation center',
-            'description' => 'When evacuees arrive, staff can scan the QR code to verify identity and record that the person has reached safety.',
+            'title' => 'Scan on arrival',
+            'description' => 'At the evacuation center, staff can scan the QR code to verify identity and record that the person has reached safety.',
         ],
         [
             'icon' => 'sparkles',
@@ -112,7 +115,27 @@ Route::middleware('throttle:30,1')
     ->post('offline-registrations', OfflineRegistrationController::class)
     ->name('offline-registrations.store');
 
-Route::middleware('auth')->get('registration/complete', RegistrationCompleteController::class)
+Route::get('email/confirm', [EmailVerificationCodeController::class, 'create'])
+    ->name('verification.code.create');
+
+Route::middleware('throttle:6,1')
+    ->post('email/confirm', [EmailVerificationCodeController::class, 'store'])
+    ->name('verification.code.store');
+
+Route::middleware('throttle:6,1')
+    ->post('email/confirm/resend', [EmailVerificationCodeController::class, 'send'])
+    ->name('verification.code.send');
+
+Route::middleware('guest')->group(function () {
+    Route::post('auth/google/firebase', [GoogleAuthController::class, 'firebaseLogin'])
+        ->name('auth.google.firebase');
+    Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])
+        ->name('auth.google.redirect');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])
+        ->name('auth.google.callback');
+});
+
+Route::middleware(['auth', 'verified'])->get('registration/complete', RegistrationCompleteController::class)
     ->name('registration.complete');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -129,6 +152,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('throttle:60,1')
             ->post('victim-status/updates', HouseholdStatusUpdateController::class)
             ->name('portal.victim-status-updates.store');
+    });
+
+    Route::middleware('role:'.UserRole::MainAdmin->value)->group(function () {
+        Route::patch('users-management/{user}', [PortalUserManagementController::class, 'update'])
+            ->name('portal.users-management.update');
+        Route::delete('users-management/{user}', [PortalUserManagementController::class, 'destroy'])
+            ->name('portal.users-management.destroy');
     });
 
     foreach (PortalAccess::routeModules() as $module) {

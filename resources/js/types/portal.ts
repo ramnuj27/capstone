@@ -47,10 +47,32 @@ export type PortalModuleSection = {
     rows: PortalModuleRow[];
 };
 
+export type PortalUserDirectoryRoleOption = {
+    value: string;
+    label: string;
+};
+
+export type PortalUserDirectoryRecord = {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    roleLabel: string;
+    barangay: string | null;
+    hasHouseholdProfile: boolean;
+};
+
+export type PortalUserDirectory = {
+    roleOptions: PortalUserDirectoryRoleOption[];
+    barangays: string[];
+    records: PortalUserDirectoryRecord[];
+};
+
 export type PortalModuleWorkspace = {
     title: string;
     metrics: PortalModuleMetric[];
     sections: PortalModuleSection[];
+    userDirectory: PortalUserDirectory | null;
 } | null;
 
 export type PortalSharedData = {

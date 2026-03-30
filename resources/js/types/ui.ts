@@ -14,5 +14,5 @@ export type AuthLayoutProps = {
     title?: string;
     description?: string;
     contentWidth?: 'default' | 'wide';
-    variant?: 'simple' | 'card';
+    variant?: 'simple' | 'card' | 'minimal';
 };

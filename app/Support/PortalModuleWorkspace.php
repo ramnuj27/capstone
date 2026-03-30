@@ -15,7 +15,20 @@ final class PortalModuleWorkspace
      * @return array{
      *     title: string,
      *     metrics: list<array{label: string, value: string, helper: string}>,
-     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>
+     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>,
+     *     userDirectory: array{
+     *         roleOptions: list<array{value: string, label: string}>,
+     *         barangays: list<string>,
+     *         records: list<array{
+     *             id: int,
+     *             name: string,
+     *             email: string,
+     *             role: string,
+     *             roleLabel: string,
+     *             barangay: string|null,
+     *             hasHouseholdProfile: bool
+     *         }>
+     *     }|null
      * }|null
      */
     public static function for(string $moduleKey): ?array
@@ -33,19 +46,33 @@ final class PortalModuleWorkspace
      * @return array{
      *     title: string,
      *     metrics: list<array{label: string, value: string, helper: string}>,
-     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>
+     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>,
+     *     userDirectory: array{
+     *         roleOptions: list<array{value: string, label: string}>,
+     *         barangays: list<string>,
+     *         records: list<array{
+     *             id: int,
+     *             name: string,
+     *             email: string,
+     *             role: string,
+     *             roleLabel: string,
+     *             barangay: string|null,
+     *             hasHouseholdProfile: bool
+     *         }>
+     *     }|null
      * }
      */
     private static function usersManagement(): array
     {
-        $recentUsers = User::query()
+        $users = User::query()
             ->with('householdProfile:id,user_id,barangay')
-            ->latest('id')
-            ->limit(5)
+            ->orderBy('name')
             ->get(['id', 'name', 'email', 'role']);
+        $latestUsers = $users->sortByDesc('id')->take(5)->values();
+        $roleCounts = $users->countBy(fn (User $user): string => $user->role->value);
 
-        $roleRows = array_map(function (UserRole $role): array {
-            $count = User::query()->where('role', $role->value)->count();
+        $roleRows = array_map(function (UserRole $role) use ($roleCounts): array {
+            $count = (int) ($roleCounts[$role->value] ?? 0);
 
             return self::row(
                 $role->label(),
@@ -62,13 +89,13 @@ final class PortalModuleWorkspace
         return [
             'title' => 'Users overview',
             'metrics' => [
-                self::metric('Total users', User::query()->count(), 'All accounts in the portal'),
-                self::metric('Residents', User::query()->where('role', UserRole::Resident->value)->count(), 'Resident-facing accounts'),
-                self::metric('Responders', User::query()->where('role', UserRole::Responder->value)->count(), 'Field operation accounts'),
-                self::metric('Linked profiles', HouseholdProfile::query()->count(), 'Users with household records'),
+                self::metric('Total users', $users->count(), 'All accounts in the portal'),
+                self::metric('Residents', (int) ($roleCounts[UserRole::Resident->value] ?? 0), 'Resident-facing accounts'),
+                self::metric('Responders', (int) ($roleCounts[UserRole::Responder->value] ?? 0), 'Field operation accounts'),
+                self::metric('Linked profiles', $users->filter(fn (User $user): bool => $user->householdProfile !== null)->count(), 'Users with household records'),
             ],
             'sections' => [
-                self::section('Latest accounts', $recentUsers->map(function (User $user): array {
+                self::section('Latest accounts', $latestUsers->map(function (User $user): array {
                     $barangay = $user->householdProfile?->barangay;
 
                     return self::row(
@@ -79,6 +106,27 @@ final class PortalModuleWorkspace
                 })->all(), 'No accounts yet', 'Create users to start building portal access.'),
                 self::section('Role distribution', $roleRows),
             ],
+            'userDirectory' => [
+                'roleOptions' => array_map(
+                    fn (UserRole $role): array => [
+                        'value' => $role->value,
+                        'label' => $role->label(),
+                    ],
+                    UserRole::cases(),
+                ),
+                'barangays' => MatiBarangays::values(),
+                'records' => $users->map(function (User $user): array {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role->value,
+                        'roleLabel' => $user->role->label(),
+                        'barangay' => $user->householdProfile?->barangay,
+                        'hasHouseholdProfile' => $user->householdProfile !== null,
+                    ];
+                })->all(),
+            ],
         ];
     }
 
@@ -86,7 +134,8 @@ final class PortalModuleWorkspace
      * @return array{
      *     title: string,
      *     metrics: list<array{label: string, value: string, helper: string}>,
-     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>
+     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>,
+     *     userDirectory: null
      * }
      */
     private static function barangayManagement(): array
@@ -147,6 +196,7 @@ final class PortalModuleWorkspace
                     );
                 })->all(), 'No household roles recorded', 'Registration data will appear here.'),
             ],
+            'userDirectory' => null,
         ];
     }
 
@@ -154,7 +204,8 @@ final class PortalModuleWorkspace
      * @return array{
      *     title: string,
      *     metrics: list<array{label: string, value: string, helper: string}>,
-     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>
+     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>,
+     *     userDirectory: null
      * }
      */
     private static function analyticsReports(): array
@@ -236,6 +287,7 @@ final class PortalModuleWorkspace
                     );
                 })->all(), 'No household analytics yet', 'Register households to populate this report.'),
             ],
+            'userDirectory' => null,
         ];
     }
 
@@ -243,7 +295,8 @@ final class PortalModuleWorkspace
      * @return array{
      *     title: string,
      *     metrics: list<array{label: string, value: string, helper: string}>,
-     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>
+     *     sections: list<array{title: string, rows: list<array{primary: string, secondary: string, meta: string}>}>,
+     *     userDirectory: null
      * }
      */
     private static function systemSettings(): array
@@ -270,6 +323,7 @@ final class PortalModuleWorkspace
                     self::row('Mail from', (string) (config('mail.from.address') ?: 'Not set'), 'Outgoing notification sender'),
                 ]),
             ],
+            'userDirectory' => null,
         ];
     }
 
